@@ -1,6 +1,12 @@
 "use client";
 
-const ranges = [7, 30, 90] as const;
+const ranges = [
+  { days: 7, label: "This Week" },
+  { days: 30, label: "Last 30 Days" },
+  { days: 90, label: "Last 90 Days" },
+  { days: 180, label: "Last 6 Months" },
+  { days: 365, label: "Last Year" },
+] as const;
 
 export function TimeRangeSelector({
   value,
@@ -10,18 +16,18 @@ export function TimeRangeSelector({
   onChange: (range: number) => void;
 }) {
   return (
-    <div className="flex bg-surface rounded-lg border border-border overflow-hidden">
-      {ranges.map((r) => (
+    <div className="flex gap-1.5">
+      {ranges.map(({ days, label }) => (
         <button
-          key={r}
-          onClick={() => onChange(r)}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${
-            value === r
-              ? "bg-accent text-background"
-              : "text-foreground/60 hover:text-foreground"
+          key={days}
+          onClick={() => onChange(days)}
+          className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors duration-150 ${
+            value === days
+              ? "border border-accent text-accent bg-accent/10"
+              : "border border-border text-text-muted hover:border-text-dim hover:text-foreground"
           }`}
         >
-          {r}d
+          {label}
         </button>
       ))}
     </div>

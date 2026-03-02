@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   }
 
   const range = parseInt(request.nextUrl.searchParams.get("range") || "30");
-  const validRanges = [7, 30, 90];
+  const validRanges = [7, 30, 90, 180, 365];
   const days = validRanges.includes(range) ? range : 30;
 
   const start = new Date();
@@ -31,11 +31,10 @@ export async function GET(request: NextRequest) {
 
     const params = { start: startDate };
 
-    const [cycles, recoveries, sleeps] = await Promise.all([
-      client.cycle.getAll(params),
-      client.recovery.getAll(params),
-      client.sleep.getAll(params),
-    ]);
+    // Fetch sequentially to avoid hitting WHOOP's rate limit on large ranges
+    const cycles = await client.cycle.getAll(params);
+    const recoveries = await client.recovery.getAll(params);
+    const sleeps = await client.sleep.getAll(params);
 
     // Build recovery map by cycle_id
     const recoveryMap = new Map(
@@ -64,10 +63,11 @@ export async function GET(request: NextRequest) {
     const chartData = cycles
       .filter((c) => c.score_state === "SCORED" && c.score)
       .map((cycle) => {
-        const date = new Date(cycle.start).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        });
+        const date = new Date(cycle.start).toLocaleDateString("en-US",
+          days >= 90
+            ? { month: "numeric", day: "numeric" }
+            : { month: "short", day: "numeric" }
+        );
         const recovery = recoveryMap.get(cycle.id);
         const sleep = recoverySleepMap.get(cycle.id);
 
@@ -115,6 +115,8 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("Trends API error:", err);
-    return NextResponse.json({ error: "Failed to fetch trends" }, { status: 500 });
+    const status = (err as { statusCode?: number }).statusCode === 429 ? 429 : 500;
+    const message = status === 429 ? "Rate limited by WHOOP" : "Failed to fetch trends";
+    return NextResponse.json({ error: message }, { status });
   }
 }

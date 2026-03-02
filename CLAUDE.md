@@ -26,19 +26,22 @@ src/
 │       │   ├── callback/route.ts   #   GET: exchange code, fetch profile, set session
 │       │   └── logout/route.ts     #   POST: clear session
 │       └── whoop/
-│           └── trends/route.ts     #   GET ?range=7|30|90: aggregated chart data
+│           ├── trends/route.ts     #   GET ?range=7|30|90: aggregated chart data
+│           └── chat/route.ts       #   POST: streaming Claude chat with WHOOP context
 ├── components/
 │   ├── DashboardShell.tsx          # Client component — state, data fetching, layout
 │   ├── TimeRangeSelector.tsx       # 7d / 30d / 90d toggle
 │   ├── StatCard.tsx                # Summary metric card
 │   ├── RecoveryChart.tsx           # Recovery % line chart (0-100, zone lines at 33/67)
 │   ├── SleepChart.tsx              # Sleep performance % line chart
-│   └── StrainChart.tsx             # Strain line chart (0-21)
+│   ├── StrainChart.tsx             # Strain line chart (0-21)
+│   └── ChatPanel.tsx              # Collapsible chat panel for health insights
 ├── lib/
+│   ├── types.ts                    # Shared types: TrendPoint, TrendsResponse, ChatMessage
 │   ├── session.ts                  # iron-session: get/set/clear encrypted cookie
 │   ├── auth.ts                     # OAuth helpers: buildAuthUrl, exchangeCode, refreshTokens
 │   └── whoop-client.ts            # Creates WhooopperClient.withTokens() with auto-refresh
-└── middleware.ts                   # Protects / and /api/whoop/*; proactive token refresh
+└── proxy.ts                        # Protects / and /api/whoop/*; proactive token refresh
 ```
 
 ## Architecture
@@ -66,6 +69,14 @@ Tokens are proactively refreshed (5-minute buffer before expiry) in two places:
 
 Both call WHOOP's `/oauth/oauth2/token` endpoint with `grant_type=refresh_token`.
 
+### Chat
+
+- Collapsible chat panel (bottom-right button → side panel) powered by Claude (`claude-sonnet-4-20250514`)
+- Each request sends the current `TrendsResponse` + `range` as context, so switching ranges updates the chat context automatically
+- Streaming responses via `@anthropic-ai/sdk` `messages.stream()` → `ReadableStream` of text deltas
+- System prompt embeds the user's WHOOP summary and daily data points, positioning Claude as a health insights assistant
+- Protected by the same middleware as other `/api/whoop/*` routes, plus a belt-and-suspenders session check
+
 ### Data Flow
 
 1. `page.tsx` (server) checks session → renders `<DashboardShell firstName={...} />`
@@ -78,6 +89,7 @@ Both call WHOOP's `/oauth/oauth2/token` endpoint with `grant_type=refresh_token`
 
 - **Server**: `page.tsx`, `layout.tsx`, `login/page.tsx`, all API routes
 - **Client**: all `components/*.tsx` (prefixed with `"use client"`)
+- **Shared types**: `lib/types.ts` (imported by both server and client code)
 
 ## Theme
 
@@ -99,6 +111,7 @@ WHOOP_CLIENT_ID=           # From WHOOP Developer Portal
 WHOOP_CLIENT_SECRET=       # From WHOOP Developer Portal
 SESSION_SECRET=            # 32+ character random string for iron-session
 NEXT_PUBLIC_BASE_URL=      # Default: http://localhost:3000
+ANTHROPIC_API_KEY=         # For Claude chat feature
 ```
 
 Copy `.env.local.example` → `.env.local` to get started.
@@ -107,6 +120,7 @@ Copy `.env.local.example` → `.env.local` to get started.
 
 - **Next.js 16** (App Router, Turbopack)
 - **React 19**
+- **@anthropic-ai/sdk** — Claude API client for chat
 - **whoopper** — WHOOP API client
 - **Recharts 3** — line charts
 - **iron-session 8** — encrypted cookie sessions

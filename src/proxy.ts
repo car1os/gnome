@@ -16,7 +16,7 @@ const sessionOptions = {
 
 const REFRESH_BUFFER_MS = 5 * 60 * 1000;
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Don't protect login page or auth API routes

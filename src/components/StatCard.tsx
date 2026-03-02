@@ -15,12 +15,12 @@ export function StatCard({
   const color = value !== null && colorFn ? colorFn(value) : undefined;
 
   return (
-    <div className="bg-surface rounded-xl border border-border p-6">
-      <p className="text-foreground/60 text-sm mb-1">{label}</p>
-      <p className="text-3xl font-bold" style={color ? { color } : undefined}>
+    <div className="bg-surface rounded-xl p-4">
+      <p className="text-text-muted text-xs mb-1">{label}</p>
+      <p className="text-xl font-semibold" style={color ? { color } : undefined}>
         {displayValue}
         {value !== null && (
-          <span className="text-lg font-normal text-foreground/40 ml-1">
+          <span className="text-sm font-normal text-text-dim ml-0.5">
             {unit}
           </span>
         )}

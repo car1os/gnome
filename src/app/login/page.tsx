@@ -5,17 +5,17 @@ export default function LoginPage({
 }) {
   return (
     <main className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center space-y-8">
+      <div className="text-center space-y-6">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold text-foreground">WHOOP Dashboard</h1>
-          <p className="text-foreground/60">
+          <h1 className="text-xl font-semibold text-foreground">WHOOP Dashboard</h1>
+          <p className="text-text-muted text-sm">
             View your recovery, sleep, and strain trends
           </p>
         </div>
 
         <a
           href="/api/auth/login"
-          className="inline-block px-8 py-3 bg-accent text-background font-semibold rounded-lg hover:opacity-90 transition-opacity"
+          className="inline-block px-6 py-2 bg-accent text-background text-sm font-medium rounded-lg hover:opacity-90 transition-opacity"
         >
           Connect with WHOOP
         </a>
