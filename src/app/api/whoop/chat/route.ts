@@ -1,12 +1,17 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getSession } from "@/lib/session";
-import { ChatMessage, TrendsResponse } from "@/lib/types";
+import { ChatMessage, DateRange, TrendsResponse } from "@/lib/types";
 
 const anthropic = new Anthropic();
 
-function buildSystemPrompt(context: TrendsResponse, range: number): string {
+function buildSystemPrompt(context: TrendsResponse, range: DateRange): string {
   const { summary, data } = context;
+
+  const rangeLabel =
+    range.kind === "preset"
+      ? `last ${range.days} days`
+      : `${range.startDate} to ${range.endDate}`;
 
   const dailyRows = data
     .map(
@@ -17,7 +22,7 @@ function buildSystemPrompt(context: TrendsResponse, range: number): string {
 
   return `You are a health insights assistant for a WHOOP user. You have access to their recent health data and help them understand trends, patterns, and actionable takeaways.
 
-## User's WHOOP Data (last ${range} days)
+## User's WHOOP Data (${rangeLabel})
 
 ### Summary
 - Average Recovery: ${summary.avgRecovery ?? "N/A"}%
@@ -47,7 +52,7 @@ export async function POST(request: NextRequest) {
   const { messages, context, range } = (await request.json()) as {
     messages: ChatMessage[];
     context: TrendsResponse;
-    range: number;
+    range: DateRange;
   };
 
   if (!messages?.length || !context) {

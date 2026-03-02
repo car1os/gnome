@@ -7,10 +7,11 @@ import { RecoveryChart } from "./RecoveryChart";
 import { SleepChart } from "./SleepChart";
 import { StrainChart } from "./StrainChart";
 import { ChatPanel } from "./ChatPanel";
-import { TrendsResponse } from "@/lib/types";
+import { ThemeToggle } from "./ThemeToggle";
+import { DateRange, TrendsResponse } from "@/lib/types";
 
 export function DashboardShell({ firstName }: { firstName: string }) {
-  const [range, setRange] = useState(30);
+  const [range, setRange] = useState<DateRange>({ kind: "preset", days: 30 });
   const [trends, setTrends] = useState<TrendsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +48,11 @@ export function DashboardShell({ firstName }: { firstName: string }) {
       if (cancelled) return;
       setLoading(true);
       try {
-        const res = await fetch(`/api/whoop/trends?range=${range}`, {
+        const url =
+          range.kind === "preset"
+            ? `/api/whoop/trends?range=${range.days}`
+            : `/api/whoop/trends?start=${range.startDate}&end=${range.endDate}`;
+        const res = await fetch(url, {
           signal: controller.signal,
         });
         if (!res.ok) {
@@ -75,50 +80,53 @@ export function DashboardShell({ firstName }: { firstName: string }) {
   }, [range]);
 
   return (
-    <main className="min-h-screen bg-background p-4 md:p-6">
-      <header className="flex items-center justify-between mb-5">
+    <main className="min-h-screen bg-background p-8 md:p-16">
+      <header className="flex items-center justify-between mb-12">
         <TimeRangeSelector value={range} onChange={setRange} />
-        <div className="relative" ref={menuRef}>
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="w-8 h-8 rounded-full bg-surface flex items-center justify-center text-text-muted hover:text-foreground transition-colors"
-            aria-label="User menu"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="8" cy="8" r="5.5" />
-              <path d="M3.5 13.5a5.5 5.5 0 0 1 9 0" />
-              <circle cx="8" cy="6.5" r="2" />
-            </svg>
-          </button>
-          {menuOpen && (
-            <div className="absolute right-0 top-10 bg-surface border border-border rounded-lg py-1 shadow-lg z-50 min-w-[120px]">
-              <div className="px-3 py-1.5 text-xs text-text-muted border-b border-border">{firstName}</div>
-              <form action="/api/auth/logout" method="POST">
-                <button
-                  type="submit"
-                  className="w-full text-left px-3 py-1.5 text-xs text-text-muted hover:text-foreground hover:bg-background transition-colors"
-                >
-                  Logout
-                </button>
-              </form>
-            </div>
-          )}
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="w-9 h-9 rounded-full bg-surface flex items-center justify-center text-text-dim hover:text-text-muted transition-colors duration-300"
+              aria-label="User menu"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="8" cy="8" r="5.5" />
+                <path d="M3.5 13.5a5.5 5.5 0 0 1 9 0" />
+                <circle cx="8" cy="6.5" r="2" />
+              </svg>
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-11 bg-surface rounded py-1.5 z-50 min-w-[120px]">
+                <a href="https://app.whoop.com" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-[10px] uppercase tracking-[0.15em] text-text-dim hover:text-foreground transition-colors duration-300 border-b border-border">{firstName}</a>
+                <form action="/api/auth/logout" method="POST">
+                  <button
+                    type="submit"
+                    className="w-full text-left px-4 py-2 text-[10px] uppercase tracking-[0.15em] text-text-dim hover:text-foreground transition-colors duration-300"
+                  >
+                    Logout
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
       {error && (
-        <div className="text-recovery-red text-center py-6 text-sm">{error}</div>
+        <div className="text-recovery-red text-center py-8 text-[11px] uppercase tracking-wider">{error}</div>
       )}
 
       {loading && !trends && (
-        <div className="text-text-dim text-center py-16 text-sm">
-          Loading your data...
+        <div className="text-text-dim text-center py-24 text-[11px] uppercase tracking-wider">
+          Loading...
         </div>
       )}
 
       {trends && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <StatCard
               label="Avg Recovery"
               value={trends.summary.avgRecovery}
@@ -132,7 +140,7 @@ export function DashboardShell({ firstName }: { firstName: string }) {
             />
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-8">
             <RecoveryChart data={trends.data} dataLength={trends.data.length} visible={visible} />
             <StrainChart data={trends.data} dataLength={trends.data.length} visible={visible} />
           </div>

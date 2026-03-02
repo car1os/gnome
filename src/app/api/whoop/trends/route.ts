@@ -9,13 +9,35 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const range = parseInt(request.nextUrl.searchParams.get("range") || "30");
-  const validRanges = [7, 30, 90, 180, 365];
-  const days = validRanges.includes(range) ? range : 30;
+  const startParam = request.nextUrl.searchParams.get("start");
+  const endParam = request.nextUrl.searchParams.get("end");
 
-  const start = new Date();
-  start.setDate(start.getDate() - days);
-  const startDate = start.toISOString();
+  let startDate: string;
+  let endDate: string | undefined;
+  let days: number;
+
+  if (startParam && endParam) {
+    // Custom date range
+    const startMs = new Date(startParam).getTime();
+    const endMs = new Date(endParam).getTime();
+    if (isNaN(startMs) || isNaN(endMs) || startMs > endMs) {
+      return NextResponse.json({ error: "Invalid date range" }, { status: 400 });
+    }
+    startDate = new Date(startParam).toISOString();
+    // Add 1 day to end to include the full end date
+    const endPlusOne = new Date(endParam);
+    endPlusOne.setDate(endPlusOne.getDate() + 1);
+    endDate = endPlusOne.toISOString();
+    days = Math.ceil((endMs - startMs) / (1000 * 60 * 60 * 24));
+  } else {
+    // Preset range
+    const range = parseInt(request.nextUrl.searchParams.get("range") || "30");
+    const validRanges = [7, 30, 90, 180, 365];
+    days = validRanges.includes(range) ? range : 30;
+    const start = new Date();
+    start.setDate(start.getDate() - days);
+    startDate = start.toISOString();
+  }
 
   try {
     const { client, updatedTokens } = await getClient(session);
@@ -29,12 +51,28 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const params = { start: startDate };
+    const params: { start: string; end?: string } = { start: startDate };
+    if (endDate) params.end = endDate;
 
     // Fetch sequentially to avoid hitting WHOOP's rate limit on large ranges
     const cycles = await client.cycle.getAll(params);
     const recoveries = await client.recovery.getAll(params);
     const sleeps = await client.sleep.getAll(params);
+    const workouts = await client.workout.getAll(params);
+
+    // Group workouts by date string (YYYY-MM-DD)
+    const workoutsByDate = new Map<string, { sport: string; strain: number }[]>();
+    for (const w of workouts) {
+      if (w.score_state !== "SCORED" || !w.score) continue;
+      const dateKey = new Date(w.start).toISOString().slice(0, 10);
+      const entry = {
+        sport: w.sport_name || "Activity",
+        strain: w.score.strain,
+      };
+      const existing = workoutsByDate.get(dateKey);
+      if (existing) existing.push(entry);
+      else workoutsByDate.set(dateKey, [entry]);
+    }
 
     // Build recovery map by cycle_id
     const recoveryMap = new Map(
@@ -71,6 +109,8 @@ export async function GET(request: NextRequest) {
         const recovery = recoveryMap.get(cycle.id);
         const sleep = recoverySleepMap.get(cycle.id);
 
+        const dateKey = new Date(cycle.start).toISOString().slice(0, 10);
+
         return {
           date,
           rawDate: cycle.start,
@@ -82,6 +122,7 @@ export async function GET(request: NextRequest) {
           sleepHours: sleep?.score
             ? sleep.score.stage_summary.total_in_bed_time_milli / 3_600_000
             : null,
+          workouts: workoutsByDate.get(dateKey) ?? [],
         };
       })
       .sort((a, b) => new Date(a.rawDate).getTime() - new Date(b.rawDate).getTime());

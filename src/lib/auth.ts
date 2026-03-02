@@ -88,6 +88,7 @@ export async function refreshTokens(refreshToken: string): Promise<{
       refresh_token: refreshToken,
       client_id: getClientId(),
       client_secret: getClientSecret(),
+      redirect_uri: getRedirectUri(),
     }),
   });
 

@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ChatMessage, TrendsResponse } from "@/lib/types";
+import { ChatMessage, DateRange, TrendsResponse } from "@/lib/types";
 
 export function ChatPanel({
   trends,
   range,
 }: {
   trends: TrendsResponse | null;
-  range: number;
+  range: DateRange;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);

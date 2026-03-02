@@ -1,3 +1,8 @@
+export interface WorkoutMark {
+  sport: string;
+  strain: number;
+}
+
 export interface TrendPoint {
   date: string;
   recovery: number | null;
@@ -6,6 +11,7 @@ export interface TrendPoint {
   strain: number | null;
   sleepPerformance: number | null;
   sleepHours: number | null;
+  workouts: WorkoutMark[];
 }
 
 export interface TrendsResponse {
@@ -16,6 +22,10 @@ export interface TrendsResponse {
     avgStrain: number | null;
   };
 }
+
+export type DateRange =
+  | { kind: "preset"; days: number }
+  | { kind: "custom"; startDate: string; endDate: string }; // YYYY-MM-DD
 
 export interface ChatMessage {
   role: "user" | "assistant";

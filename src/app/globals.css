@@ -1,16 +1,35 @@
 @import "tailwindcss";
 
-:root {
-  --background: #1a1a1a;
-  --foreground: #e0e0e0;
-  --surface: #2a2a2a;
-  --border: #333;
-  --text-muted: #888;
-  --text-dim: #666;
-  --accent: #00d1b2;
-  --recovery-green: #00d1b2;
-  --recovery-yellow: #ffcc00;
-  --recovery-red: #ff4444;
+.dark {
+  color-scheme: dark;
+  --background: #171614;
+  --foreground: #e8e4df;
+  --surface: #23211e;
+  --border: #2e2b27;
+  --text-muted: #8a857e;
+  --text-dim: #5c5750;
+  --accent: #0e9aa3;
+  --recovery-green: #0e9aa3;
+  --recovery-yellow: #c9a84c;
+  --recovery-red: #b8493b;
+  --chart-sleep: #7c7aef;
+  --chart-strain: #c67a3c;
+}
+
+.light {
+  color-scheme: light;
+  --background: #f5f3f0;
+  --foreground: #1a1815;
+  --surface: #ffffff;
+  --border: #e0ddd8;
+  --text-muted: #6b6660;
+  --text-dim: #a09890;
+  --accent: #0e8a93;
+  --recovery-green: #0e8a93;
+  --recovery-yellow: #b8972f;
+  --recovery-red: #a83e30;
+  --chart-sleep: #5b58d6;
+  --chart-strain: #b56a2c;
 }
 
 @theme inline {
@@ -30,4 +49,10 @@
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+a:hover,
+button:hover,
+[role="button"]:hover {
+  cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><text y='18' font-size='18'>☝🏼</text></svg>") 10 2, pointer;
 }

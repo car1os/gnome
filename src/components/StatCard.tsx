@@ -11,16 +11,16 @@ export function StatCard({
   unit: string;
   colorFn?: (value: number) => string;
 }) {
-  const displayValue = value !== null ? value : "—";
+  const displayValue = value !== null ? value : "\u2014";
   const color = value !== null && colorFn ? colorFn(value) : undefined;
 
   return (
-    <div className="bg-surface rounded-xl p-4">
-      <p className="text-text-muted text-xs mb-1">{label}</p>
-      <p className="text-xl font-semibold" style={color ? { color } : undefined}>
+    <div className="bg-surface rounded p-8">
+      <p className="text-[10px] uppercase tracking-[0.2em] text-text-muted mb-3">{label}</p>
+      <p className="text-4xl font-light" style={color ? { color } : undefined}>
         {displayValue}
         {value !== null && (
-          <span className="text-sm font-normal text-text-dim ml-0.5">
+          <span className="text-xs font-light text-text-dim ml-1.5">
             {unit}
           </span>
         )}
